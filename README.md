@@ -232,21 +232,54 @@ Services:
 - **Backend API**: http://localhost:8000
 - **PostgreSQL**: localhost:5432
 
-### 🚀 Deployment Status
+## 🚀 Deployment
 
-> [!NOTE]
-> **Active Development**
-> ResQAI is currently in active development. The platform is being finalized and optimized for the final judging round.
+ResQAI is currently under active development as part of the Build Beyond Hackathon.
 
-- **Status**: Local development and Docker testing complete.
-- **Production Infrastructure**:
-  - **Backend**: Planned for deployment on **Render** (FastAPI Web Service).
-  - **Frontend**: Planned for deployment on **Vercel** or **Render Static Sites** (React Single Page Application).
-  - **Database**: **PostgreSQL** will be used as the production database cluster.
-- **Timeline**: Deployment is scheduled to go live after **20 July 2026**.
-- **Demo Links**: Live demo URLs and API endpoints will be added to this section once the deployment is complete.
+The application is being built with a production-ready architecture and will be deployed before the final hackathon submission.
+
+### Current Status
+
+- ✅ Project architecture completed
+- ✅ UI/UX design completed
+- ✅ Frontend development in progress
+- 🚧 Backend development in progress
+- 🚧 AI modules under development
+- 🚧 Testing and optimization in progress
+- ⏳ Cloud deployment planned before the final submission
+
+### Planned Infrastructure
+
+#### Backend
+- FastAPI
+- Docker
+- Render
+
+#### Frontend
+- React
+- Vite
+- Tailwind CSS
+- Render Static Site or Vercel
+
+#### Database
+- PostgreSQL
+
+### Upcoming
+
+The repository will be updated before the final submission with:
+
+- 🌐 Live Demo
+- 📹 Demo Video
+- 📸 Project Screenshots
+- 📚 Complete Documentation
+- ☁️ Production Deployment
+
+> **Note**
+>
+> This repository is actively being developed throughout the hackathon. New features, improvements, bug fixes, deployment, and documentation will be added before the final submission.
 
 ---
+
 
 ## 🔌 API Reference
 
