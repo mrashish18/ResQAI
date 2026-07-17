@@ -54,29 +54,24 @@ ResQAI solves these problems by providing:
 ## 📸 Screenshots
 
 ### 🌐 Landing Page & Authentication
-| Landing Page Hero | Features Grid | Login Page |
+| Landing Hero | Features Grid | Login Page |
 | :---: | :---: | :---: |
-| ![Landing Hero](./screenshots/Screenshot%202026-07-17%20224450.png) | ![Landing Features](./screenshots/Screenshot%202026-07-17%20224539.png) | ![Login](./screenshots/Screenshot%202026-07-17%20224656.png) |
+| ![Landing Hero](./screenshots/Screenshot%202026-07-17%20224450.png) | ![Features Grid](./screenshots/Screenshot%202026-07-17%20224539.png) | ![Login Page](./screenshots/Screenshot%202026-07-17%20224656.png) |
 
-### 📊 Dashboard & Live Map
-| User Dashboard | Interactive Live Map | Analytics Center |
+### 📊 Dashboard, Live Map & Analytics
+| User Dashboard | Interactive Live Map | Analytics Dashboard |
 | :---: | :---: | :---: |
-| ![Dashboard](./screenshots/Screenshot%202026-07-17%20224728.png) | ![Live Map](./screenshots/Screenshot%202026-07-17%20224741.png) | ![Analytics](./screenshots/Screenshot%202026-07-17%20224827.png) |
+| ![User Dashboard](./screenshots/Screenshot%202026-07-17%20224728.png) | ![Live Map](./screenshots/Screenshot%202026-07-17%20224741.png) | ![Analytics Dashboard](./screenshots/Screenshot%202026-07-17%20224827.png) |
 
-### 🆘 Emergency Reporting & AI
-| SOS Form | AI Features Hub |
-| :---: | :---: |
-| ![SOS Form](./screenshots/Screenshot%202026-07-17%20224755.png) | ![AI Features](./screenshots/Screenshot%202026-07-17%20224816.png) |
-
-### 🚁 Resource Coordination & Volunteers
-| Rescue Operations | Relief Management | Volunteer Task Board |
+### 🆘 Emergency Reporting, AI Assistant & Notifications
+| SOS Form | AI Emergency Chat | Notifications Center |
 | :---: | :---: | :---: |
-| ![Rescue](./screenshots/Screenshot%202026-07-17%20224910.png) | ![Relief](./screenshots/Screenshot%202026-07-17%20224839.png) | ![Volunteer](./screenshots/Screenshot%202026-07-17%20224938.png) |
+| ![SOS Form](./screenshots/Screenshot%202026-07-17%20224755.png) | ![AI Chat](./screenshots/Screenshot%202026-07-17%20224816.png) | ![Notifications Center](./screenshots/Screenshot%202026-07-17%20224954.png) |
 
-### 🔑 Administration
-| User Account Console |
-| :---: |
-| ![Admin](./screenshots/Screenshot%202026-07-17%20224954.png) |
+### 📦 Relief, Administration & System Settings
+| Relief & Resources | Admin Console | System Settings |
+| :---: | :---: | :---: |
+| ![Relief & Resources](./screenshots/Screenshot%202026-07-17%20224910.png) | ![Admin Console](./screenshots/Screenshot%202026-07-17%20224839.png) | ![System Settings](./screenshots/Screenshot%202026-07-17%20224938.png) |
 
 ---
 
