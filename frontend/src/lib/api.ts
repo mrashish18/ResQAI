@@ -32,7 +32,7 @@ api.interceptors.response.use(
   }
 )
 
-// Auth API
+// ─── Auth API ────────────────────────────────────────────────────────────────
 export const authAPI = {
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
@@ -47,28 +47,22 @@ export const authAPI = {
 
   me: () => api.get('/auth/me'),
 
-  forgotPassword: (email: string) =>
-    api.post('/auth/forgot-password', { email }),
-
-  resetPassword: (token: string, password: string) =>
-    api.post('/auth/reset-password', { token, password }),
-
   changePassword: (old_password: string, new_password: string) =>
-    api.post('/auth/change-password', { old_password, new_password }),
+    api.put('/auth/change-password', { old_password, new_password }),
 
   updateProfile: (data: Partial<{ full_name: string; phone: string }>) =>
-    api.put('/auth/profile', data),
+    api.put('/users/me', data),
 }
 
-// Incidents API
+// ─── Incidents API ───────────────────────────────────────────────────────────
 export const incidentsAPI = {
   list: (params?: {
-    page?: number
-    size?: number
+    skip?: number
+    limit?: number
     status?: string
     type?: string
     severity?: string
-  }) => api.get('/incidents', { params }),
+  }) => api.get('/incidents/', { params }),
 
   get: (id: number) => api.get(`/incidents/${id}`),
 
@@ -78,8 +72,9 @@ export const incidentsAPI = {
     severity: string
     latitude: number
     longitude: number
-    description: string
-  }) => api.post('/incidents', data),
+    description?: string
+    status?: string
+  }) => api.post('/incidents/', data),
 
   update: (id: number, data: Partial<{
     title: string
@@ -90,40 +85,24 @@ export const incidentsAPI = {
   }>) => api.put(`/incidents/${id}`, data),
 
   delete: (id: number) => api.delete(`/incidents/${id}`),
-
-  assignTeam: (incidentId: number, teamId: number) =>
-    api.post(`/incidents/${incidentId}/assign-team`, { team_id: teamId }),
-
-  nearby: (lat: number, lng: number, radius: number) =>
-    api.get('/incidents/nearby', { params: { lat, lng, radius } }),
 }
 
-// SOS API
+// ─── SOS API ─────────────────────────────────────────────────────────────────
 export const sosAPI = {
+  // Submit SOS as JSON (image handled separately via upload API)
   create: (data: {
     incident_type: string
     severity: string
     latitude: number
     longitude: number
-    description: string
+    description?: string
     people_count: number
     medical_emergency: boolean
-    image?: File
-  }) => {
-    const formData = new FormData()
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && key !== 'image') {
-        formData.append(key, String(value))
-      }
-    })
-    if (data.image) formData.append('image', data.image)
-    return api.post('/sos', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  },
+    image_url?: string
+  }) => api.post('/sos/', data),
 
-  list: (params?: { page?: number; size?: number; status?: string }) =>
-    api.get('/sos', { params }),
+  list: (params?: { skip?: number; limit?: number; status?: string }) =>
+    api.get('/sos/', { params }),
 
   get: (id: number) => api.get(`/sos/${id}`),
 
@@ -131,10 +110,10 @@ export const sosAPI = {
     api.put(`/sos/${id}/status`, { status }),
 }
 
-// Shelters API
+// ─── Shelters API ────────────────────────────────────────────────────────────
 export const sheltersAPI = {
-  list: (params?: { lat?: number; lng?: number; radius?: number; available?: boolean }) =>
-    api.get('/shelters', { params }),
+  list: (params?: { skip?: number; limit?: number }) =>
+    api.get('/shelters/', { params }),
 
   get: (id: number) => api.get(`/shelters/${id}`),
 
@@ -144,8 +123,10 @@ export const sheltersAPI = {
     latitude: number
     longitude: number
     capacity: number
-    contact: string
-  }) => api.post('/shelters', data),
+    current_occupancy?: number
+    contact?: string
+    status?: string
+  }) => api.post('/shelters/', data),
 
   update: (id: number, data: Partial<{
     name: string
@@ -154,17 +135,16 @@ export const sheltersAPI = {
     status: string
     contact: string
   }>) => api.put(`/shelters/${id}`, data),
-
-  updateOccupancy: (id: number, occupancy: number) =>
-    api.put(`/shelters/${id}/occupancy`, { current_occupancy: occupancy }),
 }
 
-// Resources API
+// ─── Resources API ───────────────────────────────────────────────────────────
 export const resourcesAPI = {
-  list: (params?: { category?: string; page?: number; size?: number }) =>
-    api.get('/resources', { params }),
+  list: (params?: { category?: string; skip?: number; limit?: number }) =>
+    api.get('/resources/', { params }),
 
   get: (id: number) => api.get(`/resources/${id}`),
+
+  summary: () => api.get('/resources/summary'),
 
   create: (data: {
     name: string
@@ -172,192 +152,172 @@ export const resourcesAPI = {
     quantity: number
     unit: string
     warehouse_location: string
-  }) => api.post('/resources', data),
+  }) => api.post('/resources/', data),
 
   update: (id: number, data: Partial<{
     quantity: number
     warehouse_location: string
-    threshold_quantity: number
+    name: string
   }>) => api.put(`/resources/${id}`, data),
+
+  delete: (id: number) => api.delete(`/resources/${id}`),
 
   distribute: (data: {
     resource_id: number
     quantity: number
     distributed_to: string
     incident_id?: number
+    status?: string
   }) => api.post('/resources/distribute', data),
 
-  distributions: (params?: { page?: number; incident_id?: number }) =>
+  distributions: (params?: { incident_id?: number; skip?: number; limit?: number }) =>
     api.get('/resources/distributions', { params }),
 }
 
-// Analytics API
+// ─── Analytics API ───────────────────────────────────────────────────────────
 export const analyticsAPI = {
   summary: () => api.get('/analytics/summary'),
-
-  incidents: (params?: { start_date?: string; end_date?: string; type?: string }) =>
-    api.get('/analytics/incidents', { params }),
-
-  trends: (params?: { period?: string; type?: string }) =>
-    api.get('/analytics/trends', { params }),
-
+  incidents: () => api.get('/analytics/incidents'),
+  trends: () => api.get('/analytics/trends'),
   resources: () => api.get('/analytics/resources'),
-
-  response_times: () => api.get('/analytics/response-times'),
-
-  heatmap: () => api.get('/analytics/heatmap'),
-
-  volunteer: () => api.get('/analytics/volunteers'),
 }
 
-// Weather API
+// ─── Weather API ─────────────────────────────────────────────────────────────
 export const weatherAPI = {
-  get: (city: string) => api.get('/weather', { params: { city } }),
+  // Returns mock weather for all 5 cities
+  getAll: () => api.get('/weather/'),
 
-  byCoords: (lat: number, lng: number) =>
-    api.get('/weather/coords', { params: { lat, lng } }),
-
-  alerts: () => api.get('/weather/alerts'),
-
-  forecast: (city: string) => api.get('/weather/forecast', { params: { city } }),
+  // Alias kept for backward compatibility
+  get: (_city?: string) => api.get('/weather/'),
 }
 
-// AI Predictions API
+// ─── AI Predictions API ──────────────────────────────────────────────────────
 export const predictionsAPI = {
-  list: (params?: { risk_level?: string; type?: string; page?: number }) =>
-    api.get('/predictions', { params }),
+  list: (params?: { risk_level?: string; type?: string }) =>
+    api.get('/predictions/', { params }),
 
-  get: (id: number) => api.get(`/predictions/${id}`),
-
+  // analyze uses QUERY PARAMS (not body) — matches backend signature
   analyze: (data: {
     location: string
     latitude: number
     longitude: number
     disaster_type?: string
-  }) => api.post('/predictions/analyze', data),
-
-  active: () => api.get('/predictions/active'),
-
-  history: (params?: { page?: number; size?: number }) =>
-    api.get('/predictions/history', { params }),
+  }) =>
+    api.post('/predictions/analyze', null, {
+      params: {
+        location: data.location,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        disaster_type: data.disaster_type ?? 'flood',
+      },
+    }),
 }
 
-// Chatbot API
+// ─── Chatbot API ─────────────────────────────────────────────────────────────
 export const chatbotAPI = {
-  send: (message: string, session_id?: string) =>
-    api.post('/chatbot/message', { message, session_id }),
+  // Backend route: POST /api/chatbot/  body: { message: string }
+  send: (message: string) => api.post('/chatbot/', { message }),
 
-  history: (session_id: string) =>
-    api.get(`/chatbot/history/${session_id}`),
-
+  // Emergency guide shortcut (maps to chatbot with predefined message)
   emergencyGuide: (disaster_type: string) =>
-    api.get('/chatbot/emergency-guide', { params: { disaster_type } }),
-
-  analyzeImage: (image: File) => {
-    const formData = new FormData()
-    formData.append('image', image)
-    return api.post('/chatbot/analyze-image', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  },
+    api.post('/chatbot/', { message: `emergency guide for ${disaster_type}` }),
 }
 
-// Notifications API
+// ─── Notifications API ───────────────────────────────────────────────────────
 export const notificationsAPI = {
-  list: (params?: { is_read?: boolean; page?: number; size?: number }) =>
-    api.get('/notifications', { params }),
+  list: (params?: { skip?: number; limit?: number }) =>
+    api.get('/notifications/', { params }),
 
   markRead: (id: number) => api.put(`/notifications/${id}/read`),
 
-  markAllRead: () => api.put('/notifications/mark-all-read'),
-
-  delete: (id: number) => api.delete(`/notifications/${id}`),
-
-  count: () => api.get('/notifications/unread-count'),
-
-  preferences: () => api.get('/notifications/preferences'),
-
-  updatePreferences: (data: Record<string, boolean>) =>
-    api.put('/notifications/preferences', data),
+  create: (data: {
+    title: string
+    message: string
+    type: string
+    priority?: string
+    user_id?: number
+  }) => api.post('/notifications/', data),
 }
 
-// Rescue Teams API
+// ─── Rescue Teams API ────────────────────────────────────────────────────────
 export const rescueTeamsAPI = {
-  list: (params?: { status?: string; page?: number }) =>
-    api.get('/rescue-teams', { params }),
+  // Backend prefix is /api/rescue/teams  (NOT /api/rescue-teams)
+  list: (params?: { status?: string; skip?: number; limit?: number }) =>
+    api.get('/rescue/teams', { params }),
 
-  get: (id: number) => api.get(`/rescue-teams/${id}`),
+  get: (id: number) => api.get(`/rescue/teams/${id}`),
 
   create: (data: {
     name: string
-    specialization: string
-    members_count: number
-    contact: string
-  }) => api.post('/rescue-teams', data),
-
-  update: (id: number, data: Partial<{
-    status: string
     latitude: number
     longitude: number
-    assigned_incident_id: number
-  }>) => api.put(`/rescue-teams/${id}`, data),
+    members_count?: number
+    specialization?: string
+    status?: string
+  }) => api.post('/rescue/teams', data),
 
-  updateLocation: (id: number, lat: number, lng: number) =>
-    api.put(`/rescue-teams/${id}/location`, { latitude: lat, longitude: lng }),
+  updateStatus: (id: number, new_status: string) =>
+    api.put(`/rescue/teams/${id}/status`, null, {
+      params: { status: new_status },
+    }),
+
+  assign: (teamId: number, incidentId: number) =>
+    api.put(`/rescue/teams/${teamId}/assign`, null, {
+      params: { incident_id: incidentId },
+    }),
+
+  unassign: (teamId: number) =>
+    api.put(`/rescue/teams/${teamId}/unassign`),
+
+  delete: (id: number) => api.delete(`/rescue/teams/${id}`),
 }
 
-// Volunteers API
-export const volunteersAPI = {
-  list: (params?: { status?: string; page?: number }) =>
-    api.get('/volunteers', { params }),
+// ─── Users API ───────────────────────────────────────────────────────────────
+export const usersAPI = {
+  list: (params?: { skip?: number; limit?: number }) =>
+    api.get('/users/', { params }),
 
-  register: (data: {
-    skills: string[]
-    availability: string
-    location: string
-  }) => api.post('/volunteers/register', data),
+  get: (id: number) => api.get(`/users/${id}`),
 
-  tasks: (params?: { status?: string; page?: number }) =>
-    api.get('/volunteers/tasks', { params }),
-
-  acceptTask: (taskId: number) =>
-    api.post(`/volunteers/tasks/${taskId}/accept`),
-
-  completeTask: (taskId: number, notes?: string) =>
-    api.post(`/volunteers/tasks/${taskId}/complete`, { notes }),
-
-  createTask: (data: {
-    title: string
-    description: string
-    location: string
-    required_skills: string[]
-    priority: string
-    due_date?: string
-    incident_id?: number
-  }) => api.post('/volunteers/tasks', data),
-}
-
-// Admin API
-export const adminAPI = {
-  users: (params?: { role?: string; page?: number; size?: number }) =>
-    api.get('/admin/users', { params }),
-
-  updateUser: (id: number, data: Partial<{
+  update: (id: number, data: Partial<{
+    full_name: string
+    phone: string
     role: string
     is_active: boolean
-  }>) => api.put(`/admin/users/${id}`, data),
+  }>) => api.put(`/users/${id}`, data),
 
-  deleteUser: (id: number) => api.delete(`/admin/users/${id}`),
+  delete: (id: number) => api.delete(`/users/${id}`),
+}
 
-  systemStats: () => api.get('/admin/stats'),
+// ─── File Upload API ─────────────────────────────────────────────────────────
+export const uploadsAPI = {
+  uploadImage: async (file: File, folder = 'general') => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post(`/uploads/image?folder=${folder}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 
-  logs: (params?: { page?: number; type?: string }) =>
-    api.get('/admin/logs', { params }),
+  deleteImage: (filePath: string) =>
+    api.delete('/uploads/image', { params: { file_path: filePath } }),
+}
 
-  config: () => api.get('/admin/config'),
+// ─── Volunteers API ──────────────────────────────────────────────────────────
+export const volunteersAPI = {
+  tasks: (params?: { status?: string; skip?: number; limit?: number }) =>
+    api.get('/volunteers/tasks', { params }),
 
-  updateConfig: (data: Record<string, unknown>) =>
-    api.put('/admin/config', data),
+  acceptTask: (id: number) =>
+    api.post(`/volunteers/tasks/${id}/accept`),
+
+  completeTask: (id: number) =>
+    api.post(`/volunteers/tasks/${id}/complete`),
+}
+
+// ─── Admin API ───────────────────────────────────────────────────────────────
+export const adminAPI = {
+  systemStats: () => api.get('/analytics/summary'),
 }
 
 export default api

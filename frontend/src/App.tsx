@@ -22,6 +22,8 @@ const AdminPage = lazy(() => import('./pages/AdminPage'))
 const RescuePage = lazy(() => import('./pages/RescuePage'))
 const VolunteerPage = lazy(() => import('./pages/VolunteerPage'))
 const ReliefPage = lazy(() => import('./pages/ReliefPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 // Full-page loading fallback
 const PageLoader: React.FC = () => (
@@ -159,6 +161,22 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <ReliefPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
                 </ProtectedRoute>
               }
             />

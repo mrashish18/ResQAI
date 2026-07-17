@@ -6,8 +6,10 @@ import { volunteersAPI } from '../lib/api'
 import type { VolunteerTask } from '../types'
 import toast from 'react-hot-toast'
 import SeverityBadge from '../components/SeverityBadge'
+import { useAuth } from '../context/AuthContext'
 
 const VolunteerPage: React.FC = () => {
+  const { user } = useAuth()
   const [tasks, setTasks] = useState<VolunteerTask[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -33,6 +35,16 @@ const VolunteerPage: React.FC = () => {
       fetchTasks()
     } catch (error) {
       toast.error("Failed to accept task")
+    }
+  }
+
+  const handleCompleteTask = async (taskId: number) => {
+    try {
+      await volunteersAPI.completeTask(taskId)
+      toast.success("Task completed!")
+      fetchTasks()
+    } catch (error) {
+      toast.error("Failed to complete task")
     }
   }
 
@@ -103,9 +115,13 @@ const VolunteerPage: React.FC = () => {
                   <button onClick={() => handleAcceptTask(task.id)} className="btn-primary w-full py-3" style={{ background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)', borderColor: '#059669' }}>
                     Accept Task
                   </button>
+                ) : task.status === 'accepted' && task.assigned_to === user?.id ? (
+                  <button onClick={() => handleCompleteTask(task.id)} className="btn-primary w-full py-3" style={{ background: 'linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)', borderColor: '#2563EB' }}>
+                    Mark Completed
+                  </button>
                 ) : (
                   <button disabled className="btn-glass w-full py-3 opacity-50 flex justify-center items-center gap-2 text-emerald-400">
-                    <CheckCircle2 size={18} /> Task Assigned
+                    <CheckCircle2 size={18} /> {task.status === 'completed' ? 'Task Completed' : 'Task Assigned'}
                   </button>
                 )}
               </motion.div>

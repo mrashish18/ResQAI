@@ -40,7 +40,7 @@ const AnalyticsPage: React.FC = () => {
       try {
         const [sumRes, trendRes] = await Promise.all([
           analyticsAPI.summary(),
-          analyticsAPI.trends({ period: 'monthly' })
+          analyticsAPI.trends()
         ])
         setSummary(sumRes.data)
         setTrends(trendRes.data)

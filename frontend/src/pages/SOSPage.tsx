@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { AlertCircle, MapPin, Camera, CheckCircle2, ShieldAlert } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
-import { sosAPI } from '../lib/api'
+import { sosAPI, uploadsAPI } from '../lib/api'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
@@ -57,6 +57,16 @@ const SOSPage: React.FC = () => {
 
     setLoading(true)
     try {
+      let imageUrl: string | undefined = undefined
+      if (form.image) {
+        try {
+          const uploadRes = await uploadsAPI.uploadImage(form.image, 'sos')
+          imageUrl = uploadRes.data.file_url
+        } catch (uploadError) {
+          console.error("Image upload failed, submitting SOS without image", uploadError)
+        }
+      }
+
       await sosAPI.create({
         incident_type: form.incident_type,
         severity: form.severity,
@@ -65,7 +75,7 @@ const SOSPage: React.FC = () => {
         description: form.description,
         people_count: parseInt(form.people_count) || 1,
         medical_emergency: form.medical_emergency,
-        image: form.image || undefined
+        image_url: imageUrl
       })
       setSuccess(true)
       toast.success("SOS Alert Broadcasted!")
