@@ -13,7 +13,6 @@
   <img src="https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi" />
   <img src="https://img.shields.io/badge/TailwindCSS-4-38B2AC?style=flat-square&logo=tailwindcss" />
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
 </p>
 
 ---
@@ -370,11 +369,17 @@ Full interactive API docs available at `/docs` (Swagger UI) and `/redoc`.
 4. Push to branch: `git push origin feature/my-feature`
 5. Open a Pull Request
 
----
+## 📄 Copyright
 
-## 📄 License
+© 2026 Team ResQAI. All Rights Reserved.
 
-MIT License — see [LICENSE](LICENSE) for details.
+This repository is published for Build Beyond Hackathon evaluation and portfolio purposes only.
+
+The source code, design, documentation, architecture, and project assets are proprietary intellectual property of Team ResQAI.
+
+Unauthorized copying, redistribution, modification, reproduction, or commercial use of any part of this repository is prohibited without prior written permission from the project authors.
+
+Viewing the repository for evaluation purposes does not grant permission to reuse or redistribute the source code.
 
 ---
 
