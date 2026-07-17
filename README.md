@@ -384,5 +384,5 @@ Viewing the repository for evaluation purposes does not grant permission to reus
 ---
 
 <p align="center">
-  Built with ❤️ for saving lives · ResQAI 2024
+  Built with ❤️ for saving lives · ResQAI 2026
 </p>
