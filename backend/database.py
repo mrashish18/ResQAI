@@ -1,42 +1,46 @@
 """
 Database configuration for ResQAI.
-Uses SQLite for development with SQLAlchemy ORM.
+Engine creation is controlled via config.py settings.
 """
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-import os
+from config import get_settings
 
-# SQLite database URL fallback
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./resqai.db")
+settings = get_settings()
 
-# Create SQLAlchemy engine
-# check_same_thread=False is only needed for SQLite
-if DATABASE_URL.startswith("sqlite"):
+# Create SQLAlchemy engine.
+# SQLite needs check_same_thread=False; PostgreSQL does not.
+if settings.is_sqlite:
     engine = create_engine(
-        DATABASE_URL,
+        settings.database_url,
         connect_args={"check_same_thread": False},
-        echo=False,
+        echo=settings.environment == "development",
     )
 else:
     engine = create_engine(
-        DATABASE_URL,
+        settings.database_url,
+        pool_pre_ping=True,   # Detect stale connections before use
+        pool_size=10,         # Connection pool size
+        max_overflow=20,      # Extra connections beyond pool_size
         echo=False,
     )
 
-# Create a configured SessionLocal class
+# Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base class for all models
+# Base class for all ORM models
 Base = declarative_base()
+
+# Re-export DATABASE_URL so alembic/env.py can import it
+DATABASE_URL = settings.database_url
 
 
 def get_db():
     """
-    Dependency function that provides a database session.
-    Yields a session and ensures it is closed after use.
+    FastAPI dependency: yields a database session and ensures it is
+    properly closed after the request, even on errors.
     """
     db = SessionLocal()
     try:

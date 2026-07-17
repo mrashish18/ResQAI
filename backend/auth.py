@@ -1,6 +1,7 @@
 """
 JWT authentication utilities for ResQAI.
 Handles token creation, password hashing, and user extraction from tokens.
+Uses centralised configuration from config.py.
 """
 
 from datetime import datetime, timedelta
@@ -12,32 +13,22 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
+from config import get_settings
 from database import get_db
 import models
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
-SECRET_KEY = "resqai-super-secret-key-change-in-production-2024"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 10080  # 7 days
+settings = get_settings()
 
 # ---------------------------------------------------------------------------
-# OAuth2 scheme
+# OAuth2 scheme — tokenUrl points to the login endpoint
 # ---------------------------------------------------------------------------
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 # ---------------------------------------------------------------------------
-# Helper functions
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
 # Password hashing
 # ---------------------------------------------------------------------------
-
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain-text password against its bcrypt hash."""
@@ -54,6 +45,9 @@ def get_password_hash(password: str) -> str:
     return hashed.decode("utf-8")
 
 
+# ---------------------------------------------------------------------------
+# JWT token utilities
+# ---------------------------------------------------------------------------
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
@@ -61,21 +55,23 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
     Args:
         data: Payload dict to encode (must include a 'sub' key).
-        expires_delta: Optional custom expiry. Defaults to ACCESS_TOKEN_EXPIRE_MINUTES.
+        expires_delta: Optional custom expiry. Defaults to settings value.
 
     Returns:
         Encoded JWT string.
     """
     to_encode = data.copy()
     expire = datetime.utcnow() + (
-        expires_delta if expires_delta else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta
+        if expires_delta
+        else timedelta(minutes=settings.access_token_expire_minutes)
     )
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
 # ---------------------------------------------------------------------------
-# FastAPI dependencies
+# FastAPI dependency: current user
 # ---------------------------------------------------------------------------
 
 def get_current_user(
@@ -95,7 +91,9 @@ def get_current_user(
     )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
@@ -123,3 +121,26 @@ def get_current_active_user(
             detail="Inactive user account",
         )
     return current_user
+
+
+def require_roles(*roles: models.UserRole):
+    """
+    Dependency factory: allows only users whose role is in `roles`.
+
+    Usage::
+
+        @router.get("/admin-only")
+        def admin_only(user = Depends(require_roles(UserRole.admin))):
+            ...
+    """
+    def _check(
+        current_user: models.User = Depends(get_current_active_user),
+    ) -> models.User:
+        if current_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action.",
+            )
+        return current_user
+
+    return _check

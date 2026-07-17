@@ -758,5 +758,70 @@ def seed_database(db: Session) -> None:
         pred = models.Prediction(**p)
         db.add(pred)
 
+    # -----------------------------------------------------------------------
+    # Volunteer Tasks & Relief Distributions
+    # -----------------------------------------------------------------------
+    sample_incident = db.query(models.Incident).first()
+    sample_resource = db.query(models.Resource).first()
+
+    volunteer_tasks_data = [
+        {
+            "title": "Distribute food packets to Chennai flood victims",
+            "description": "Help distribute cooked food packets and water bottles to stranded residents in low-lying parts of Tambaram.",
+            "location": "Tambaram West Relief Center, Chennai",
+            "required_skills": "Driving,Physical Labor,Local Language",
+            "status": "open",
+            "priority": models.SeverityLevel.high,
+            "due_date": datetime.utcnow() + timedelta(days=2),
+            "incident_id": sample_incident.id if sample_incident else None,
+        },
+        {
+            "title": "First Aid Support at Nehru Stadium Shelter",
+            "description": "Provide basic medical support, dressing, and health check assistance at the main relief shelter.",
+            "location": "Nehru Stadium, Bhubaneswar, Odisha",
+            "required_skills": "First Aid,Nursing,Empathy",
+            "status": "open",
+            "priority": models.SeverityLevel.critical,
+            "due_date": datetime.utcnow() + timedelta(days=1),
+            "incident_id": sample_incident.id if sample_incident else None,
+        },
+        {
+            "title": "Help Pack Dry Ration Kits at Guwahati Warehouse",
+            "description": "Sort and pack essential dry grains, pulses, oil, and hygiene supplies into family relief kits.",
+            "location": "NDRF Hub Warehouse, Guwahati, Assam",
+            "required_skills": "Packing,Sorting,Physical Labor",
+            "status": "open",
+            "priority": models.SeverityLevel.medium,
+            "due_date": datetime.utcnow() + timedelta(days=5),
+            "incident_id": None,
+        }
+    ]
+
+    for t in volunteer_tasks_data:
+        task = models.VolunteerTask(**t)
+        db.add(task)
+
+    if sample_resource:
+        distributions_data = [
+            {
+                "resource_id": sample_resource.id,
+                "quantity": 150.0,
+                "distributed_to": "Tambaram West Shelter, Chennai",
+                "incident_id": sample_incident.id if sample_incident else None,
+                "status": "delivered",
+            },
+            {
+                "resource_id": sample_resource.id,
+                "quantity": 80.0,
+                "distributed_to": "Puri Coastal Relief Center",
+                "incident_id": None,
+                "status": "delivered",
+            }
+        ]
+
+        for d in distributions_data:
+            dist = models.ReliefDistribution(**d)
+            db.add(dist)
+
     db.commit()
     print("✅ Database seeded successfully with all disaster scenario data.")

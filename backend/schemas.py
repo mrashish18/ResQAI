@@ -5,7 +5,7 @@ Pydantic v2 schemas for request validation and response serialization in ResQAI.
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 
 
 # ---------------------------------------------------------------------------
@@ -15,9 +15,9 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 class UserCreate(BaseModel):
     email: EmailStr
     full_name: str = Field(..., min_length=2, max_length=255)
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=6, description="Minimum 6 characters")
     role: Optional[str] = "citizen"
-    phone: Optional[str] = None
+    phone: Optional[str] = Field(None, max_length=20)
 
 
 class UserLogin(BaseModel):
@@ -38,10 +38,15 @@ class UserResponse(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    full_name: Optional[str] = None
-    phone: Optional[str] = None
+    full_name: Optional[str] = Field(None, min_length=2, max_length=255)
+    phone: Optional[str] = Field(None, max_length=20)
     role: Optional[str] = None
     is_active: Optional[bool] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=1, description="Current password")
+    new_password: str = Field(..., min_length=6, description="New password (min 6 chars)")
 
 
 class Token(BaseModel):
@@ -56,20 +61,20 @@ class Token(BaseModel):
 
 class IncidentCreate(BaseModel):
     title: str = Field(..., min_length=5, max_length=500)
-    type: str
-    severity: str
-    latitude: float
-    longitude: float
-    description: Optional[str] = None
+    type: str = Field(..., description="Incident type: flood | earthquake | cyclone | wildfire | tsunami | landslide | other")
+    severity: str = Field(..., description="Severity: low | medium | high | critical")
+    latitude: float = Field(..., ge=-90.0, le=90.0)
+    longitude: float = Field(..., ge=-180.0, le=180.0)
+    description: Optional[str] = Field(None, max_length=5000)
     status: Optional[str] = "active"
 
 
 class IncidentUpdate(BaseModel):
-    title: Optional[str] = None
+    title: Optional[str] = Field(None, min_length=5, max_length=500)
     type: Optional[str] = None
     severity: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    latitude: Optional[float] = Field(None, ge=-90.0, le=90.0)
+    longitude: Optional[float] = Field(None, ge=-180.0, le=180.0)
     description: Optional[str] = None
     status: Optional[str] = None
 
@@ -94,14 +99,18 @@ class IncidentResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class SOSCreate(BaseModel):
-    incident_type: str
-    severity: str
-    latitude: float
-    longitude: float
-    description: Optional[str] = None
-    people_count: int = Field(default=1, ge=1)
+    incident_type: str = Field(..., description="Type of emergency (e.g. flood, earthquake)")
+    severity: str = Field(..., description="Severity: low | medium | high | critical")
+    latitude: float = Field(..., ge=-90.0, le=90.0)
+    longitude: float = Field(..., ge=-180.0, le=180.0)
+    description: Optional[str] = Field(None, max_length=500)
+    people_count: int = Field(default=1, ge=1, le=10000)
     medical_emergency: bool = False
-    image_url: Optional[str] = None
+    image_url: Optional[str] = Field(None, max_length=500)
+
+
+class SOSStatusUpdate(BaseModel):
+    status: str = Field(..., description="New status: pending | acknowledged | in_progress | resolved | cancelled")
 
 
 class SOSResponse(BaseModel):
@@ -127,20 +136,20 @@ class SOSResponse(BaseModel):
 
 class ShelterCreate(BaseModel):
     name: str = Field(..., min_length=3, max_length=500)
-    address: str
-    latitude: float
-    longitude: float
+    address: str = Field(..., max_length=1000)
+    latitude: float = Field(..., ge=-90.0, le=90.0)
+    longitude: float = Field(..., ge=-180.0, le=180.0)
     capacity: int = Field(..., ge=1)
     current_occupancy: int = Field(default=0, ge=0)
-    contact: Optional[str] = None
+    contact: Optional[str] = Field(None, max_length=100)
     status: Optional[str] = "open"
 
 
 class ShelterUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=3, max_length=500)
     address: Optional[str] = None
-    capacity: Optional[int] = None
-    current_occupancy: Optional[int] = None
+    capacity: Optional[int] = Field(None, ge=1)
+    current_occupancy: Optional[int] = Field(None, ge=0)
     contact: Optional[str] = None
     status: Optional[str] = None
 
@@ -164,10 +173,21 @@ class ShelterResponse(BaseModel):
 # Rescue Team schemas
 # ---------------------------------------------------------------------------
 
+class RescueTeamCreate(BaseModel):
+    name: str = Field(..., min_length=3, max_length=500)
+    latitude: float = Field(..., ge=-90.0, le=90.0)
+    longitude: float = Field(..., ge=-180.0, le=180.0)
+    members_count: int = Field(default=10, ge=1)
+    specialization: Optional[str] = Field(None, max_length=255)
+    status: Optional[str] = "available"
+
+
 class RescueTeamUpdate(BaseModel):
     status: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    latitude: Optional[float] = Field(None, ge=-90.0, le=90.0)
+    longitude: Optional[float] = Field(None, ge=-180.0, le=180.0)
+    members_count: Optional[int] = Field(None, ge=1)
+    specialization: Optional[str] = None
     assigned_incident_id: Optional[int] = None
 
 
@@ -189,9 +209,18 @@ class RescueTeamResponse(BaseModel):
 # Resource schemas
 # ---------------------------------------------------------------------------
 
+class ResourceCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=500)
+    category: str = Field(..., description="Category: food | water | medicine | blankets | vehicles | equipment")
+    quantity: float = Field(..., ge=0)
+    unit: str = Field(..., max_length=50)
+    warehouse_location: str = Field(..., max_length=500)
+
+
 class ResourceUpdate(BaseModel):
-    quantity: Optional[float] = None
-    warehouse_location: Optional[str] = None
+    quantity: Optional[float] = Field(None, ge=0)
+    warehouse_location: Optional[str] = Field(None, max_length=500)
+    name: Optional[str] = Field(None, max_length=500)
 
 
 class ResourceResponse(BaseModel):
@@ -211,11 +240,11 @@ class ResourceResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class NotificationCreate(BaseModel):
-    user_id: Optional[int] = None  # None = broadcast
-    type: str
-    title: str
-    message: str
-    priority: Optional[str] = "normal"
+    user_id: Optional[int] = Field(None, description="Target user ID; None = broadcast to all")
+    type: str = Field(..., max_length=100, description="Notification type (alert, update, info, etc.)")
+    title: str = Field(..., max_length=500)
+    message: str = Field(..., max_length=2000)
+    priority: Optional[str] = Field("normal", description="Priority: low | normal | high | critical")
 
 
 class NotificationResponse(BaseModel):
@@ -321,3 +350,89 @@ class WeatherResponse(BaseModel):
     alerts: List[WeatherAlert]
     risk_level: str
     last_updated: str
+
+
+# ---------------------------------------------------------------------------
+# Upload schemas
+# ---------------------------------------------------------------------------
+
+class UploadResponse(BaseModel):
+    url: str
+    filename: str
+    folder: str
+    uploaded_by: str
+
+
+# ---------------------------------------------------------------------------
+# Volunteer Task schemas
+# ---------------------------------------------------------------------------
+
+class VolunteerTaskCreate(BaseModel):
+    title: str = Field(..., min_length=2, max_length=255)
+    description: str = Field(..., min_length=5, max_length=2000)
+    location: str = Field(..., min_length=2, max_length=500)
+    required_skills: List[str] = Field(..., description="List of required skills")
+    priority: Optional[str] = "medium"  # low, medium, high, critical
+    due_date: Optional[datetime] = None
+    incident_id: Optional[int] = None
+
+
+class VolunteerTaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    required_skills: Optional[List[str]] = None
+    priority: Optional[str] = None
+    status: Optional[str] = None  # open, accepted, completed
+    assigned_to: Optional[int] = None
+    due_date: Optional[datetime] = None
+    incident_id: Optional[int] = None
+
+
+class VolunteerTaskResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    description: str
+    location: str
+    required_skills: List[str]
+    assigned_to: Optional[int] = None
+    incident_id: Optional[int] = None
+    status: str
+    priority: str
+    due_date: Optional[datetime] = None
+    created_at: datetime
+
+    @field_validator("required_skills", mode="before")
+    @classmethod
+    def parse_required_skills(cls, v):
+        if isinstance(v, str):
+            return [s.strip() for s in v.split(",") if s.strip()]
+        return v
+
+
+# ---------------------------------------------------------------------------
+# Relief Distribution schemas
+# ---------------------------------------------------------------------------
+
+class ReliefDistributionCreate(BaseModel):
+    resource_id: int = Field(..., ge=1)
+    quantity: float = Field(..., gt=0)
+    distributed_to: str = Field(..., min_length=2, max_length=500)
+    incident_id: Optional[int] = None
+    status: Optional[str] = "delivered"
+
+
+class ReliefDistributionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    resource_id: int
+    resource_name: str
+    quantity: float
+    distributed_to: str
+    distributed_at: datetime
+    incident_id: Optional[int] = None
+    status: str
+

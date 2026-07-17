@@ -1,8 +1,5 @@
-"""
-Disaster prediction routes for ResQAI.
-Returns AI-generated risk predictions from DB and dynamic mock predictions.
-"""
-
+import json
+import logging
 import random
 from datetime import datetime
 from typing import List
@@ -13,6 +10,9 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 import schemas
+from services.ai import call_openrouter
+
+logger = logging.getLogger("resqai.predictions")
 
 router = APIRouter(prefix="/api/predictions", tags=["Predictions"])
 
@@ -93,31 +93,79 @@ def list_predictions(db: Session = Depends(get_db)):
 
 
 @router.post("/analyze", response_model=schemas.PredictionResponse)
-def analyze_location(
+async def analyze_location(
     location: str = Query(..., description="Location name or description"),
     disaster_type: str = Query(..., description="Disaster type to analyse"),
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),
 ):
     """
-    Generate a mock AI-powered disaster risk prediction for a given location and disaster type.
-    Returns a confidence score, risk level, and detailed assessment.
+    Generate an AI-powered disaster risk prediction for a given location and disaster type.
+    First queries the OpenRouter LLM. Falls back to deterministic mock logic on failure.
     """
     valid_types = ["flood", "earthquake", "cyclone", "wildfire", "tsunami", "landslide", "other"]
     if disaster_type not in valid_types:
         disaster_type = "other"
 
-    # Deterministic scoring based on type + coordinates (mock ML logic)
-    base_score = random.uniform(0.45, 0.95)
-    lat_factor = abs(latitude - 20) / 40  # distance from 20°N (Indian disaster belt)
-    lon_factor = abs(longitude - 80) / 40  # distance from 80°E
+    # 1. Try querying OpenRouter LLM
+    prompt = (
+        f"Analyze the risk of disaster type '{disaster_type}' at location '{location}' "
+        f"(Coordinates: latitude={latitude}, longitude={longitude}).\n"
+        "Return your response in a raw JSON object with the following structure:\n"
+        "{\n"
+        '  "confidence_score": float (between 0.0 and 1.0),\n'
+        '  "risk_level": "low" | "moderate" | "high" | "extreme",\n'
+        '  "details": "detailed professional safety and meteorological assessment"\n'
+        "}\n"
+        "Only return the raw JSON object and nothing else. Do not enclose it in markdown blocks."
+    )
+    system_prompt = (
+        "You are a disaster prediction model and senior meteorological intelligence officer. "
+        "You output precise geological and weather risk assessments in structured JSON."
+    )
 
-    # Coastal types get higher scores near coasts
+    try:
+        response_text = await call_openrouter(prompt, system_prompt=system_prompt, temperature=0.2)
+        if response_text:
+            cleaned = response_text.strip()
+            if cleaned.startswith("```"):
+                lines = cleaned.splitlines()
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines[-1].startswith("```"):
+                    lines = lines[:-1]
+                cleaned = "\n".join(lines).strip()
+            
+            parsed = json.loads(cleaned)
+            conf = float(parsed.get("confidence_score", 0.75))
+            risk = parsed.get("risk_level", "moderate").lower()
+            if risk not in ["low", "moderate", "high", "extreme"]:
+                risk = "moderate"
+            details = parsed.get("details", "")
+
+            return schemas.PredictionResponse(
+                id=0,
+                disaster_type=disaster_type,
+                location_name=location,
+                latitude=latitude,
+                longitude=longitude,
+                risk_level=risk,
+                confidence_score=conf,
+                predicted_at=datetime.utcnow(),
+                details=details,
+            )
+    except Exception as exc:
+        logger.warning("OpenRouter risk analysis failed, falling back to local mock: %s", exc)
+
+    # 2. Fallback Mock Logic
+    base_score = random.uniform(0.45, 0.95)
+    lat_factor = abs(latitude - 20) / 40
+    lon_factor = abs(longitude - 80) / 40
+
     coastal_types = {"cyclone", "tsunami", "flood"}
     coastal_bonus = 0.1 if disaster_type in coastal_types and lon_factor < 0.3 else 0.0
     confidence = round(min(base_score + coastal_bonus, 0.97), 2)
 
-    # Map confidence to risk level
     if confidence >= 0.85:
         risk_level = "extreme"
     elif confidence >= 0.70:
@@ -127,7 +175,6 @@ def analyze_location(
     else:
         risk_level = "low"
 
-    # Generate contextual details
     details_map = {
         "flood": (
             f"Satellite precipitation data and river gauge readings for {location} indicate "
@@ -168,7 +215,7 @@ def analyze_location(
     details = details_map.get(disaster_type, details_map["other"])
 
     return schemas.PredictionResponse(
-        id=0,  # dynamic, not persisted
+        id=0,
         disaster_type=disaster_type,
         location_name=location,
         latitude=latitude,

@@ -1,0 +1,34 @@
+# Python virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python caches
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Database files
+backend/resqai.db
+*.db
+*.sqlite3
+
+# Local environment configs
+backend/.env
+.env
+.env.local
+
+# Node modules & frontend builds
+frontend/node_modules/
+frontend/dist/
+.eslintcache
+
+# Logs & temp files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.idea/
+.vscode/

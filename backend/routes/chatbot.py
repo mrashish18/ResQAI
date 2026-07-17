@@ -7,6 +7,7 @@ import time
 from fastapi import APIRouter
 
 import schemas
+from services.ai import call_openrouter
 
 router = APIRouter(prefix="/api/chatbot", tags=["Chatbot"])
 
@@ -293,17 +294,64 @@ DEFAULT_RESPONSE = {
 # ---------------------------------------------------------------------------
 
 @router.post("/", response_model=schemas.ChatResponse)
-def chatbot(request: schemas.ChatRequest):
+async def chatbot(request: schemas.ChatRequest):
     """
     Process a user message and return a contextual disaster-response answer.
-    Keyword matching maps queries to specific disaster domains.
+    First tries to call OpenRouter API. If that fails or is not configured,
+    falls back to the keyword-driven knowledge base.
     """
     start_time = time.time()
+    
+    # System prompt to give the AI context and structure
+    system_prompt = (
+        "You are ResQAI, an AI-powered disaster management and response assistant for India. "
+        "Provide concise, highly actionable safety guidelines, evacuation instructions, emergency protocols, "
+        "or helpline information based on the user's situation. "
+        "Keep your tone calm, direct, and supportive. Prioritize saving lives. "
+        "Format your response with clean markdown bullet points where appropriate."
+    )
+    
+    # Try calling OpenRouter
+    response_text = await call_openrouter(request.message, system_prompt=system_prompt)
+    
+    elapsed_ms = round((time.time() - start_time) * 1000, 1)
+    
+    # Classify category dynamically based on keywords in query
     message_lower = request.message.lower()
+    category = "general_preparedness"
+    if any(kw in message_lower for kw in ["sos", "emergency", "mayday", "trapped", "stuck"]):
+        category = "emergency_protocol"
+    elif any(kw in message_lower for kw in ["earthquake", "tremor", "quake", "seismic"]):
+        category = "earthquake_response"
+    elif any(kw in message_lower for kw in ["tsunami", "tidal wave"]):
+        category = "tsunami_safety"
+    elif any(kw in message_lower for kw in ["cyclone", "hurricane", "typhoon", "storm"]):
+        category = "cyclone_preparedness"
+    elif any(kw in message_lower for kw in ["wildfire", "forest fire", "bushfire", "fire"]):
+        category = "wildfire_safety"
+    elif any(kw in message_lower for kw in ["landslide", "mudslide", "rockslide"]):
+        category = "landslide_safety"
+    elif any(kw in message_lower for kw in ["flood", "flooding", "inundation", "submerged"]):
+        category = "flood_safety"
+    elif any(kw in message_lower for kw in ["water", "drinking", "contaminated", "potable"]):
+        category = "flood_safety"
+    elif any(kw in message_lower for kw in ["shelter", "camp", "refuge", "relief centre", "relief center"]):
+        category = "shelter_information"
+    elif any(kw in message_lower for kw in ["evacuation", "evacuate", "escape route", "leaving"]):
+        category = "evacuation_guidelines"
+    elif any(kw in message_lower for kw in ["help", "what can you do", "how to use"]):
+        category = "emergency_protocol"
 
+    if response_text:
+        return schemas.ChatResponse(
+            response=response_text.strip(),
+            response_time=elapsed_ms,
+            confidence=0.99,
+            category=category,
+        )
+        
+    # --- Fallback to Local Keyword Dictionary ---
     matched = None
-
-    # Priority keywords checked in order
     keyword_map = [
         (["sos", "emergency", "mayday", "trapped", "stuck"], "sos"),
         (["earthquake", "tremor", "quake", "seismic"], "earthquake"),
@@ -324,12 +372,11 @@ def chatbot(request: schemas.ChatRequest):
             break
 
     result = RESPONSES.get(matched, DEFAULT_RESPONSE) if matched else DEFAULT_RESPONSE
-
-    elapsed_ms = round((time.time() - start_time) * 1000 + 45, 1)  # Add base latency
-
+    
     return schemas.ChatResponse(
         response=result["response"],
-        response_time=elapsed_ms,
+        response_time=elapsed_ms + 45,
         confidence=result["confidence"],
         category=result["category"],
     )
+

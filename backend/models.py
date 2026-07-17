@@ -229,3 +229,48 @@ class Prediction(Base):
     confidence_score = Column(Float, nullable=False)  # 0.0 – 1.0
     predicted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     details = Column(Text, nullable=True)
+
+
+class ReliefDistribution(Base):
+    """Relief distribution record logging sent materials."""
+
+    __tablename__ = "relief_distributions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    resource_id = Column(Integer, ForeignKey("resources.id"), nullable=False)
+    quantity = Column(Float, nullable=False)
+    distributed_to = Column(String(500), nullable=False)
+    distributed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=True)
+    status = Column(String(50), default="delivered", nullable=False)
+
+    # Relationships
+    resource = relationship("Resource")
+    incident = relationship("Incident")
+
+    @property
+    def resource_name(self) -> str:
+        return self.resource.name if self.resource else "Unknown Resource"
+
+
+class VolunteerTask(Base):
+    """Community help task assigned to volunteers."""
+
+    __tablename__ = "volunteer_tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)
+    location = Column(String(500), nullable=False)
+    required_skills = Column(Text, nullable=False)  # Stored as comma-separated values
+    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
+    incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=True)
+    status = Column(String(50), default="open", nullable=False)  # open, accepted, completed
+    priority = Column(Enum(SeverityLevel), default=SeverityLevel.medium, nullable=False)
+    due_date = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    assignee = relationship("User", foreign_keys=[assigned_to])
+    incident = relationship("Incident")
+
