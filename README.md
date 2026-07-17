@@ -65,7 +65,7 @@
 ### Infrastructure
 - **Docker** + **Docker Compose** — containerization
 - **Nginx** — reverse proxy + static file serving
-- **Render** / **Railway** — cloud deployment
+- **Render** / **Vercel** — planned cloud deployment
 
 ---
 
@@ -152,7 +152,7 @@ resqai/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/resqai.git
+git clone <repository-url>
 cd resqai
 ```
 
@@ -200,12 +200,12 @@ Frontend: **http://localhost:5173**
 
 | Role | Email | Password |
 |---|---|---|
-| Admin | admin@resqai.com | password123 |
-| Rescue Team | rescue@resqai.com | password123 |
-| Volunteer | volunteer@resqai.com | password123 |
-| NGO | ngo@resqai.com | password123 |
-| Government | gov@resqai.com | password123 |
-| Citizen | citizen@resqai.com | password123 |
+| Admin | admin@resqai.in | password123 |
+| Rescue Team | rescue@resqai.in | password123 |
+| Volunteer | volunteer@resqai.in | password123 |
+| NGO | ngo@resqai.in | password123 |
+| Government | govt@resqai.in | password123 |
+| Citizen | citizen@resqai.in | password123 |
 
 ---
 
@@ -232,43 +232,19 @@ Services:
 - **Backend API**: http://localhost:8000
 - **PostgreSQL**: localhost:5432
 
-### Production Deployment
+### 🚀 Deployment Status
 
-#### Deploy on Render
+> [!NOTE]
+> **Active Development**
+> ResQAI is currently in active development. The platform is being finalized and optimized for the final judging round.
 
-1. Push code to GitHub
-2. Create new **Web Service** on [Render](https://render.com)
-3. Select the `backend` directory
-4. Set environment variables:
-   ```
-   DATABASE_URL=<your-postgresql-url>
-   SECRET_KEY=<your-secret-key>
-   ```
-5. Deploy command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-
-6. Create a new **Static Site** for the frontend
-7. Build command: `npm run build`
-8. Publish directory: `dist`
-
-#### Deploy on Railway
-
-```bash
-# Install Railway CLI
-npm install -g @railway/cli
-
-# Login
-railway login
-
-# Initialize project
-railway init
-
-# Deploy
-railway up
-```
-
-Set environment variables in Railway dashboard:
-- `DATABASE_URL` — PostgreSQL connection string
-- `SECRET_KEY` — JWT secret key
+- **Status**: Local development and Docker testing complete.
+- **Production Infrastructure**:
+  - **Backend**: Planned for deployment on **Render** (FastAPI Web Service).
+  - **Frontend**: Planned for deployment on **Vercel** or **Render Static Sites** (React Single Page Application).
+  - **Database**: **PostgreSQL** will be used as the production database cluster.
+- **Timeline**: Deployment is scheduled to go live after **20 July 2026**.
+- **Demo Links**: Live demo URLs and API endpoints will be added to this section once the deployment is complete.
 
 ---
 
